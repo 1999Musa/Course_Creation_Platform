@@ -1,25 +1,23 @@
 <?php
 
-
 namespace App\Http\Controllers;
 
-use App\Models\Course;
-use App\Models\Module;
-use App\Models\Content;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
     public function index()
     {
-        $courses = Course::with('modules.contents')->latest()->get();
+        $courses = $this->loadCourses();
         return view('courses.index', compact('courses'));
     }
 
     public function create()
     {
-        return view('courses.create');
+        $courses = $this->loadCourses();
+        return view('courses.create', compact('courses'));
     }
 
     public function store(Request $request)
@@ -35,33 +33,50 @@ class CourseController extends Controller
             'modules.*.contents.*.data' => 'required',
         ]);
 
-        $course = Course::create($request->only(['title', 'description', 'category']));
+        $courses = $this->loadCourses();
 
-        foreach ($validated['modules'] as $key => $moduleData) {
-            $module = $course->modules()->create([
-                'title' => $moduleData['title'],
-            ]);
+        $courseId = Str::uuid()->toString();
 
-            foreach ($moduleData['contents'] as $contentIndex => $contentData) {
-                $contentType = $contentData['type'];
-                $dataValue = $contentData['data'];
-
-                if ($contentType === 'image' && $request->hasFile("modules.{$key}.contents.{$contentIndex}.data")) {
-    $file = $request->file("modules.{$key}.contents.{$contentIndex}.data");
-    // Store on the 'public' disk, in 'content_images' folder
-    $path = $file->store('content_images', 'public');
-    $dataValue = $path; // just store the path as returned
-}
-
-
-                $module->contents()->create([
-                    'type' => $contentType,
-                    'data' => $dataValue,
-                ]);
+        foreach ($validated['modules'] as $mIndex => $module) {
+            foreach ($module['contents'] as $cIndex => $content) {
+                if ($content['type'] === 'image' && $request->hasFile("modules.$mIndex.contents.$cIndex.data")) {
+                    $file = $request->file("modules.$mIndex.contents.$cIndex.data");
+                    $validated['modules'][$mIndex]['contents'][$cIndex]['data'] = $file->store('content_images', 'public');
+                }
             }
         }
 
+        $courses[$courseId] = [
+            'id' => $courseId,
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'category' => $validated['category'],
+            'modules' => $validated['modules'],
+        ];
+
+        Storage::put('courses.json', json_encode($courses, JSON_PRETTY_PRINT));
 
         return redirect()->back()->with('success', 'Course created successfully!');
+    }
+
+    public function delete($id)
+    {
+        $courses = $this->loadCourses();
+
+        if (!isset($courses[$id])) {
+            return response()->json(['success' => false, 'message' => 'Course not found.'], 404);
+        }
+
+        unset($courses[$id]);
+
+        Storage::put('courses.json', json_encode($courses, JSON_PRETTY_PRINT));
+
+        return response()->json(['success' => true]);
+    }
+
+    private function loadCourses()
+    {
+        $json = Storage::exists('courses.json') ? Storage::get('courses.json') : '{}';
+        return json_decode($json, true);
     }
 }
