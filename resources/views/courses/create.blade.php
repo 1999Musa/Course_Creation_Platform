@@ -55,7 +55,6 @@
             </form>
         </div>
 
-        <!-- Right Side: Course List -->
         <!-- Right Side: Course List in Table Format -->
 <div class="col-md-4">
     <div class="card shadow-sm">
@@ -106,7 +105,7 @@
     </div>
 </div>
 
-<!-- JS Script Section -->
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
     let moduleIndex = 0;
