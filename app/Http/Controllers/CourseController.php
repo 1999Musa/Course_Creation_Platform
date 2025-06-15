@@ -47,10 +47,12 @@ class CourseController extends Controller
                 $dataValue = $contentData['data'];
 
                 if ($contentType === 'image' && $request->hasFile("modules.{$key}.contents.{$contentIndex}.data")) {
-                    $file = $request->file("modules.{$key}.contents.{$contentIndex}.data");
-                    $path = $file->store('public/content_images');
-                    $dataValue = str_replace('public/', '', $path); // store path without public prefix
-                }
+    $file = $request->file("modules.{$key}.contents.{$contentIndex}.data");
+    // Store on the 'public' disk, in 'content_images' folder
+    $path = $file->store('content_images', 'public');
+    $dataValue = $path; // just store the path as returned
+}
+
 
                 $module->contents()->create([
                     'type' => $contentType,

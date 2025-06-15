@@ -68,7 +68,7 @@
             </div>
             <div class="content-container"></div>
             <button type="button" class="btn btn-sm btn-primary add-content" data-module-index="${moduleIndex}">Add Content</button>
-            <button type="button" class="btn btn-sm btn-danger remove-module mt-2">Remove Module</button>
+            <button type="button" class="btn btn-sm btn-danger remove-module mt-2">Remove Module ❌</button>
         </div>`;
         $('#modules-container').append(moduleHtml);
         moduleIndex++;
